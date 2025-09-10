@@ -21,7 +21,17 @@
         "aarch64-linux"
       ];
       eachSystem = lib.genAttrs systems;
-      pkgsFor = inputs.nixpkgs.legacyPackages;
+      pkgsFor = lib.genAttrs systems (
+        system:
+        import inputs.nixpkgs {
+          inherit system;
+          config.allowUnfreePredicate =
+            pkg:
+            builtins.elem (lib.getName pkg) [
+              "claude-desktop"
+            ];
+        }
+      );
     in
     {
       packages = eachSystem (

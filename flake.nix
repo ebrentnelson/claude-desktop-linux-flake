@@ -3,6 +3,13 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    
+    # Claude parameters file - JSON with hash, version, and url
+    # Override with: inputs.claude-desktop.inputs.claude-params.url = "file+file:///path/to/params.json";
+    claude-params = {
+      url = "file+file:///dev/null";
+      flake = false;
+    };
   };
 
   outputs =
@@ -34,9 +41,12 @@
         in
         rec {
           patchy-cnb = pkgs.callPackage ./pkgs/patchy-cnb.nix { };
-          claude-desktop = pkgs.callPackage ./pkgs/claude-desktop.nix {
+          claude-desktop = let
+            paramsContent = builtins.readFile inputs.claude-params;
+            params = if paramsContent == "" then {} else builtins.fromJSON paramsContent;
+          in pkgs.callPackage ./pkgs/claude-desktop.nix ({
             inherit patchy-cnb;
-          };
+          } // params);
           claude-desktop-with-fhs = pkgs.buildFHSEnv {
             name = "claude-desktop";
             targetPkgs =
